@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+        <title>Taxi park</title>
+    </head>
+    <body>
+        <div style=" display: flex; margin: 5px;">
+            <button id="getdata" type="button" class="btn btn-primary" style="margin-right: 5px;">Show car list</button>
+            <button id="fromnewwindow" type="button" class="btn btn-primary" >New car</button> 
+        </div>
+
+        <div id="data">
+
+        </div>
+        <div id="container">
+
+        </div>
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ModalTitleCar">Car # </h5>
+                        <h5 class="modal-title" id="CarId"></h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body", id = "ModalBody">
+                        <p>Brand</p>
+                        <select name="brands" id="brandslistexist">
+                        </select>
+                        <p>Model</p>
+                        <select name="models" id="modelslistexist">
+                        </select>
+                        <p>License Number</p>
+                        <input type="text" class="form-control" placeholder="License" id="licenceexist">
+                        <p>Mileage</p>
+                        <input type="text" class="form-control" placeholder="Mileage" id="mileageexist">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" id="delete">Delete</button>
+                        <button type="button" class="btn btn-primary" id="savechanges">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal add car -->
+        <div class="modal fade" id="addcarmodal" tabindex="-1" role="dialog" aria-labelledby="adcarmodalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="ModalTitle">New car</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" , id="ModalBody">
+                        <p>Brand</p>
+                        <select name="brands" id="brandslist">
+                        </select>
+                        <p>Model</p>
+                        <select name="models" id="modelslist">
+                        </select>
+                        <p>License Number</p>
+                        <input type="text" class="form-control" placeholder="License" id="licence">
+                        <p>Mileage</p>
+                        <input type="text" class="form-control" placeholder="Mileage" id="mileage">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="newcar">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </body>
+    <script>
+        $(function () {
+            $('#getdata').on('click', function () {
+                $.get({
+                    url: 'https://localhost:44356/api/cars',
+                    success: function(data) {
+                        document.getElementById("container").innerHTML = "";
+                        var children = $.parseJSON(data);
+                        //children = children.R
+                        var table = document.createElement('table');
+                        table.className = "table table-bordered table-hover table-condensed";
+                        for( var i = 0; i < children.length; i++ ) {
+                        //for( var i = children.length-1; i >= 0; i-- ) {
+                        var child = children[i];
+                        if(i === 0 ) {
+                            addHeaders(table, Object.keys(child));
+                        }
+                        var row = table.insertRow();
+                        var a = 0;
+                        Object.keys(child).forEach(function(k) {
+                            var cell = row.insertCell();
+                            if( a == 1 ) {
+                                row.addEventListener("click", showAlert.bind(this, child[k]), false);
+                            }
+                            a = a + 1;
+                            cell.appendChild(document.createTextNode(child[k]));
+                        })
+                        }
+                        document.getElementById("container").appendChild(table);
+                    }
+                });
+            });
+        });
+    </script>
+    <script>
+        function addHeaders(table, keys) {
+            var row = table.insertRow();
+            for (var i = 0; i < keys.length; i++) {
+                var cell = row.insertCell();
+                cell.appendChild(document.createTextNode(keys[i]));
+            }
+        }
+        function showAlert(id) {
+            $.get({
+                url: 'https://localhost:44356/api/cars/' + id,
+                success: function (data) {
+                    var car = $.parseJSON(data);
+                    car = car[0];
+                    var model = car['Model'];
+                    var brand = car['Brand'];
+                    var indexbrand;
+                    var indexmodel;
+                    var branddropexist = document.getElementById("brandslistexist");
+                    var modeldropexist = document.getElementById("modelslistexist");
+                    var licencefieldexist = document.getElementById("licenceexist");
+                    var mileagefieldexist = document.getElementById("mileageexist");
+                    var idfield = document.getElementById("CarId");
+                    $.get({
+                        url: 'https://localhost:44356/api/brands',
+                        success: function (data) {
+                            branddropexist.innerHTML = "";
+                            var children = $.parseJSON(data);
+                            for (var i = 0; i < children.length; i++) {
+                                var child = children[i];
+                                var option = document.createElement('option');
+                                option.value = i;
+                                option.innerHTML = child["Brand"];
+                                if (option.innerHTML == brand)
+                                {
+                                    indexbrand = i;
+                                }
+                                branddropexist.appendChild(option);
+                            }
+                            branddropexist.selectedIndex = indexbrand;
+                        }
+                    });
+                    $.get({
+                        url: 'https://localhost:44356/api/Models/' + brand,
+                        success: function (data) {
+                            modeldropexist.innerHTML = "";
+                            var children = $.parseJSON(data);
+                            for (var i = 0; i < children.length; i++) {
+                                var child = children[i];
+                                var option = document.createElement('option');
+                                option.value = i;
+                                option.innerHTML = child['Model'];
+                                if (option.innerHTML == model)
+                                {
+                                    indexmodel = i;
+                                }
+                                modeldropexist.appendChild(option);
+                            }
+                            modeldropexist.selectedIndex = indexmodel;
+                        }
+                    });
+                    licencefieldexist.value = car['LicenseNumber'];
+                    mileagefieldexist.value = car['Mileage'];
+                    idfield.innerHTML = car['Id'];
+                }
+            });
+            $("#exampleModal").modal()
+        }
+    </script>
+    <script> //add new
+        $(function () {
+            $('#newcar').on('click', function () {
+                var branddrop = document.getElementById("brandslist");
+                var modeldrop = document.getElementById("modelslist");
+                var licencefield = document.getElementById("licence");
+                var mileagefield = document.getElementById("mileage");
+
+                var reg = new RegExp("^(AA|AI|AB|AC|AE|AK|AM|AH|AO|AP|AT|AX|BA|BB|BE|BK|BM|BH|BO|BC|BT|BX|BI|CA|CB|CE|CH|II)[0-9]{4}[A-Z]{2}$");
+                if (branddrop.selectedIndex != -1 && modeldrop.selectedIndex != -1 && licencefield.value.trim() != "" && mileagefield.value.trim() != "")
+                {
+                    if (reg.test(licencefield.value.trim()))
+                    {
+                        var data = { 'Brand': $("#brandslist option:selected").text(), 'Model': $("#modelslist option:selected").text(), 'Licence': licencefield.value.trim(), 'Mileage': mileagefield.value.trim() };
+                        $.post({
+                            url: 'https://localhost:44356/api/cars',
+                            data: { 'Model': $("#modelslist option:selected").text(), 'Licence': licencefield.value.trim(), 'Mileage': mileagefield.value.trim() },
+                            success: function(data) {
+                                $('#addcarmodal').modal('hide');
+                                alert("Car added");
+                                var refreshbutton = document.getElementById("getdata");
+                                refreshbutton.click();
+                            }
+                        });
+                    }
+                    else
+                    {
+                        alert ("Please enter valid licence");
+                    }
+                }
+                else
+                {
+                    alert ("Please enter all data");
+                }
+            });
+        });
+    </script>
+    <script> //save changes
+        $(function () {
+            $('#savechanges').on('click', function () {
+                var branddrop = document.getElementById("brandslistexist");
+                var modeldrop = document.getElementById("modelslistexist");
+                var licencefield = document.getElementById("licenceexist");
+                var mileagefield = document.getElementById("mileageexist");
+                var idfield = document.getElementById("CarId");
+                var reg = new RegExp("^(AA|AI|AB|AC|AE|AK|AM|AH|AO|AP|AT|AX|BA|BB|BE|BK|BM|BH|BO|BC|BT|BX|BI|CA|CB|CE|CH|II)[0-9]{4}[A-Z]{2}$"); 
+                if (branddrop.selectedIndex != -1 && modeldrop.selectedIndex != -1 && licencefield.value.trim() != "" && mileagefield.value.trim() != "")
+                {
+                    if (reg.test(licencefield.value.trim()))
+                    {
+                        $.ajax({
+                            url: 'https://localhost:44356/api/cars',
+                            type: 'PUT',
+                            data: { 'Id': idfield.innerHTML, 'Model': $("#modelslistexist option:selected").text(), 'Licence': licencefield.value.trim(), 'Mileage': mileagefield.value.trim() },
+                            success: function(data) {
+                                $('#exampleModal').modal('hide');
+                                alert("Changes saved");
+                                var refreshbutton = document.getElementById("getdata");
+                                refreshbutton.click();
+                            }
+                        });
+                    }
+                    else
+                    {
+                        alert ("Please enter valid licence");
+                    }
+                }
+                else
+                {
+                    alert ("Please enter all data");
+                }
+            });
+        });
+    </script>
+    <script> //from new car window
+        $(function () {
+            $('#fromnewwindow').on('click', function () {
+                $.get({
+                    url: 'https://localhost:44356/api/brands',
+                    success: function (data) {
+                        document.getElementById("brandslist").innerHTML = "";
+                        var children = $.parseJSON(data);
+
+                        for (var i = 0; i < children.length; i++) {
+                            var child = children[i];
+                            var option = document.createElement('option');
+                            option.value = i;
+                            option.innerHTML = child["Brand"];
+                            document.getElementById("brandslist").appendChild(option);
+                        }
+                        document.getElementById("brandslist").selectedIndex = -1;
+                        $("#addcarmodal").modal()
+                    }
+                });
+            });
+        });
+    </script>
+    <script> //event to load cars
+        $('#brandslist').on('change', function () {
+            var val = $("#brandslist option:selected").text();
+            $.get({
+                url: 'https://localhost:44356/api/Models/' + val,
+                success: function (data) {
+                    document.getElementById("modelslist").innerHTML = "";
+                    var children = $.parseJSON(data);
+                    for (var i = 0; i < children.length; i++) {
+                        var child = children[i];
+                        var option = document.createElement('option');
+                        option.value = i;
+                        option.innerHTML = child['Model'];
+                        document.getElementById("modelslist").appendChild(option);
+                    }
+                    document.getElementById("modelslist").selectedIndex = -1;
+                }
+            });
+        });
+    </script>
+    <script> //delete
+        $(function () {
+            $('#delete').on('click', function () {
+                var idfield = document.getElementById("CarId"); 
+                $.ajax({
+                    url: 'https://localhost:44356/api/cars/' + idfield.innerHTML,
+                    type: 'DELETE',
+                    success: function (data) {
+                        $('#exampleModal').modal('hide');
+                        alert("Car deleted");
+                        var refreshbutton = document.getElementById("getdata");
+                        refreshbutton.click();
+                    }
+                });
+            });
+        });
+    </script>
+</html>
